@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2014 The CyanogenMod Project
+# Copyright (C) 2014 Prashant Gahlot (proxthehacker@gmail.com)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ TARGET_KERNEL_CONFIG := cm_condor_defconfig
 BOARD_KERNEL_BASE := 0x00000000
 BOARD_KERNEL_PAGESIZE := 2048
 
-BOARD_KERNEL_CMDLINE := console=ttyHSL0,115200,n8 androidboot.console=ttyHSL0 androidboot.hardware=qcom user_debug=31 msm_rtb.filter=0x37 utags.blkdev=/dev/block/platform/msm_sdcc.1/by-name/utags vmalloc=400M androidboot.write_protect=0
+BOARD_KERNEL_CMDLINE := console=ttyHSL0,115200,n8 androidboot.console=ttyHSL0 androidboot.hardware=qcom user_debug=31 msm_rtb.filter=0x37 utags.blkdev=/dev/block/platform/msm_sdcc.1/by-name/utags vmalloc=400M androidboot.write_protect=0 androidboot.selinux=permissive
 
 BOARD_MKBOOTIMG_ARGS := --ramdisk_offset 0x01000000 --tags_offset 0x00000100
 
@@ -74,9 +74,6 @@ BOARD_USES_QCOM_HARDWARE := true
 ENABLE_WEBGL := true
 TARGET_FORCE_CPU_UPLOAD := true
 
-# APP2sd
-TARGET_EXTERNAL_APPS = sdcard1
-
 # Global flags
 COMMON_GLOBAL_CFLAGS += -DMOTOROLA_UIDS -DQCOM_HARDWARE
 TARGET_USES_MOTOROLA_LOG := true
@@ -99,7 +96,6 @@ WIFI_DRIVER_MODULE_NAME := "wlan"
 WPA_SUPPLICANT_VERSION := VER_0_8_X
 
 # Audio
-TARGET_QCOM_AUDIO_VARIANT := caf
 BOARD_USES_ALSA_AUDIO := true
 AUDIO_FEATURE_DEEP_BUFFER_PRIMARY := true
 AUDIO_FEATURE_DYNAMIC_VOLUME_MIXER := true
@@ -151,11 +147,9 @@ HAVE_SELINUX := true
 
 # SELinux
 BOARD_SEPOLICY_DIRS += \
-    $(LOCAL_PATH)/sepolicy
+    device/motorola/condor/sepolicy
 
 BOARD_SEPOLICY_UNION += \
-    adbd.te \
-    app.te \
     bluetooth_loader.te \
     bridge.te \
     camera.te \
@@ -177,7 +171,6 @@ BOARD_SEPOLICY_UNION += \
     nfc.te \
     property_contexts \
     property.te \
-    qcom.te \
     qmux.te \
     radio.te \
     rild.te \
@@ -187,7 +180,7 @@ BOARD_SEPOLICY_UNION += \
     sensors.te \
     shell.te \
     surfaceflinger.te \
-    system.te \
+    system_server.te \
     tee.te \
     te_macros \
     thermald.te \
@@ -200,4 +193,19 @@ ifneq ($(TARGET_BUILD_VARIANT),user)
     BOARD_SEPOLICY_UNION += su.te
 endif
 
-PRODUCT_BOOT_JARS := $(subst $(space),:,$(PRODUCT_BOOT_JARS))
+# Include an expanded selection of fonts
+EXTENDED_FONT_FOOTPRINT := true
+
+MALLOC_IMPL := dlmalloc
+
+# Enable dex-preoptimization to speed up first boot sequence
+ifeq ($(HOST_OS),linux)
+  ifeq ($(TARGET_BUILD_VARIANT),user)
+    ifeq ($(WITH_DEXPREOPT),)
+      WITH_DEXPREOPT := true
+      WITH_DEXPREOPT_BOOT_IMG_ONLY := false
+    endif
+  endif
+endif
+WITH_DEXPREOPT_BOOT_IMG_ONLY ?= true
+
